@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickTreasure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --purple-deep: #0d0814;
+    --purple-dark: #130d1f;
+    --purple-mid: #1e1530;
+    --purple-glow: #6b3fa0;
+    --gold: #e8b923;
+    --gold-light: #f5d76e;
+    --gold-dim: rgba(232,185,35,0.4);
+    --text: #f0eaf8;
+    --muted: rgba(240,234,248,0.35);
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--purple-deep);
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+
+
+  .grain {
+    position: fixed; inset: 0; z-index: 1; opacity: 0.04; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+  .particle {
+    position: absolute; border-radius: 50%;
+    animation: p-rise linear infinite;
+  }
+  @keyframes p-rise {
+    0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 0.6; }
+    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+
+  /* ── CARD ── */
+  .card {
+    position: relative; z-index: 10;
+    width: 560px;
+    background: linear-gradient(145deg, rgba(30,21,48,0.95), rgba(19,13,31,0.98));
+    border: 1px solid rgba(107,63,160,0.4);
+    border-radius: 2px;
+    overflow: hidden;
+    animation: card-in 1.2s cubic-bezier(0.16,1,0.3,1) forwards;
+    box-shadow:
+      0 0 0 1px rgba(232,185,35,0.08),
+      0 40px 80px rgba(0,0,0,0.6),
+      0 0 60px rgba(107,63,160,0.15),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(40px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .top-bar {
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold), var(--gold-light), var(--gold), transparent);
+    background-size: 200% 100%;
+    animation: bar-shimmer 3s linear infinite;
+  }
+  @keyframes bar-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .card-inner { padding: 44px 52px 40px; text-align: center; }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px; opacity: 0;
+    animation: fade-up 0.8s 0.2s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .store-badge { display: flex; align-items: center; gap: 8px; }
+  .badge-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold); box-shadow: 0 0 10px var(--gold);
+    animation: dot-pulse 2s ease-in-out infinite;
+  }
+  @keyframes dot-pulse {
+    0%,100% { box-shadow: 0 0 6px var(--gold); transform: scale(1); }
+    50% { box-shadow: 0 0 16px var(--gold), 0 0 30px rgba(232,185,35,0.4); transform: scale(1.2); }
+  }
+  .store-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px; letter-spacing: 4px; color: var(--gold);
+  }
+  .live-tag { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 300; }
+
+  /* ── TIME ── */
+  .time-block {
+    margin-bottom: 28px; opacity: 0; text-align: center;
+    animation: fade-up 0.8s 0.35s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .time-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 86px; line-height: 0.9; letter-spacing: 4px;
+    background: linear-gradient(135deg, var(--text) 0%, rgba(232,185,35,0.7) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .date-display {
+    font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); margin-top: 6px; font-weight: 300;
+  }
+
+  /* ── DIVIDER CANVAS ── */
+  .divider-canvas-wrap {
+    margin-bottom: 28px; opacity: 0;
+    animation: fade-up 0.8s 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .divider-canvas-wrap.divider2 {
+    animation: fade-up 0.8s 0.85s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .divider-canvas-wrap canvas { width: 100%; height: 20px; display: block; }
+
+  /* ── QUOTE ── */
+  .quote-section {
+    margin-bottom: 36px; min-height: 140px; padding: 0 8px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    opacity: 0; animation: fade-up 0.8s 0.6s cubic-bezier(0.16,1,0.3,1) forwards;
+    text-align: center;
+  }
+  .quote-text {
+    font-family: 'Crimson Pro', serif; font-size: 27px; font-style: italic;
+    line-height: 1.65; color: rgba(230,215,255,0.92); margin-bottom: 16px;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    text-shadow: 0 0 40px rgba(180,130,255,0.15);
+  }
+  .quote-text.out { opacity: 0; transform: translateY(6px); }
+  .quote-author {
+    font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--gold); font-weight: 500; transition: opacity 0.5s ease;
+    opacity: 0.8;
+  }
+  .quote-author.out { opacity: 0; }
+
+  /* ── AFFIRMATION ── */
+  .affirmation-row {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-bottom: 28px; opacity: 0;
+    animation: fade-up 0.8s 0.75s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .aff-pip {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--purple-glow); flex-shrink: 0;
+    box-shadow: 0 0 6px var(--purple-glow);
+  }
+  .aff-text {
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(180,130,240,0.85); font-weight: 500;
+    transition: opacity 0.6s ease; flex: 1;
+  }
+  .aff-text.out { opacity: 0; }
+  .aff-pip-right {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--gold-dim); flex-shrink: 0;
+    box-shadow: 0 0 6px var(--gold-dim);
+  }
+
+
+
+  /* Dynamic canvas background */
+  #bg-canvas {
+    position: fixed; inset: 0; z-index: 0;
+    width: 100%; height: 100%;
+  }
+
+  /* ── BOTTOM ── */
+  .bottom {
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; animation: fade-up 0.8s 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  .next-btn {
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--gold); background: none; border: none;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    padding: 6px 0; transition: color 0.2s, opacity 0.2s;
+    opacity: 0.7;
+  }
+  .next-btn:hover { opacity: 1; color: var(--gold-light); }
+
+  .bottom-bar {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(107,63,160,0.5), transparent);
+    margin-top: 28px;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="grain"></div>
+<div class="particles" id="particles"></div>
+
+<div class="card">
+  <div class="top-bar"></div>
+  <div class="card-inner">
+
+    <div class="header">
+      <div class="store-badge">
+        <div class="badge-dot"></div>
+        <div class="store-name">QuickTreasure</div>
+      </div>
+    </div>
+
+    <div class="time-block">
+      <div class="time-display" id="time-display">--:--</div>
+      <div class="date-display" id="date-display"></div>
+    </div>
+
+    <div class="divider-canvas-wrap">
+      <canvas id="divider1" height="20"></canvas>
+    </div>
+
+    <div class="quote-section">
+      <div class="quote-text" id="quote-text"></div>
+      <div class="quote-author" id="quote-author"></div>
+    </div>
+
+    <div class="affirmation-row">
+      <div class="aff-pip"></div>
+      <div class="aff-text" id="aff-text"></div>
+      <div class="aff-pip-right"></div>
+    </div>
+
+    <div class="divider-canvas-wrap divider2">
+      <canvas id="divider2" height="20"></canvas>
+    </div>
+
+    <div class="bottom">
+      <button class="next-btn" onclick="nextQuote()">↻ next quote</button>
+    </div>
+
+  </div>
+  <div class="bottom-bar"></div>
+</div>
+
+<script>
+  // ── DYNAMIC CANVAS BACKGROUND ──
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+
+  // Orbs
+  const orbs = [
+    { x: 0.15, y: 0.2,  r: 280, color: [107,63,160],  speed: 0.00018, ox: 0, oy: 0, phase: 0 },
+    { x: 0.8,  y: 0.75, r: 220, color: [232,185,35],   speed: 0.00012, ox: 0, oy: 0, phase: 2 },
+    { x: 0.6,  y: 0.3,  r: 180, color: [140,50,200],   speed: 0.00022, ox: 0, oy: 0, phase: 4 },
+    { x: 0.2,  y: 0.8,  r: 160, color: [80,30,130],    speed: 0.00015, ox: 0, oy: 0, phase: 1 },
+  ];
+
+  // Grid lines (drawn on canvas)
+  function drawGrid() {
+    ctx.strokeStyle = 'rgba(107,63,160,0.06)';
+    ctx.lineWidth = 1;
+    const gs = 40;
+    for (let x = 0; x < W; x += gs) {
+      ctx.globalAlpha = Math.max(0, 1 - (Math.abs(x - W/2) / (W * 0.6)));
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += gs) {
+      ctx.globalAlpha = Math.max(0, 1 - (Math.abs(y - H/2) / (H * 0.6)));
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  let t = 0;
+  function drawBg() {
+    t++;
+    ctx.fillStyle = '#0d0814';
+    ctx.fillRect(0, 0, W, H);
+
+    drawGrid();
+
+    // Animate orbs
+    orbs.forEach(o => {
+      o.ox = Math.sin(t * o.speed + o.phase) * 90;
+      o.oy = Math.cos(t * o.speed * 0.7 + o.phase) * 70;
+      const cx = o.x * W + o.ox;
+      const cy = o.y * H + o.oy;
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, o.r);
+      grad.addColorStop(0, `rgba(${o.color[0]},${o.color[1]},${o.color[2]},0.35)`);
+      grad.addColorStop(1, `rgba(${o.color[0]},${o.color[1]},${o.color[2]},0)`);
+      ctx.filter = 'blur(40px)';
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(cx, cy, o.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.filter = 'none';
+    });
+
+    requestAnimationFrame(drawBg);
+  }
+  drawBg();
+
+  const quotes = [
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { text: "Success is not final, failure is not fatal — it is the courage to continue that counts.", author: "Winston Churchill" },
+    { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+    { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+    { text: "Every expert was once a beginner. Every pro was once an amateur.", author: "Robin Sharma" },
+    { text: "Don't watch the clock — do what it does. Keep going.", author: "Sam Levenson" },
+    { text: "Your future is created by what you do today, not tomorrow.", author: "Robert Kiyosaki" },
+    { text: "Opportunities don't happen. You create them.", author: "Chris Grosser" },
+    { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+    { text: "Dream big. Start small. Act now.", author: "Robin Sharma" },
+    { text: "A year from now you'll wish you had started today.", author: "Karen Lamb" },
+    { text: "Hustle in silence and let your success make the noise.", author: "Unknown" },
+    { text: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
+    { text: "The harder you work for something, the greater you'll feel when you achieve it.", author: "Unknown" },
+    { text: "Small steps every day lead to big results over time.", author: "Unknown" },
+  ];
+
+  const affirmations = [
+    "You are building something real",
+    "Every sale is a step forward",
+    "Consistency compounds over time",
+    "Your store grows as you grow",
+    "Small moves. Big results.",
+    "You started. That's everything.",
+    "Progress over perfection",
+    "One listing at a time",
+    "The work you do today pays tomorrow",
+    "You're exactly where you need to be",
+    "Keep going. It's working.",
+    "Today's effort is tomorrow's result",
+  ];
+
+  // Clock
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('time-display').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('date-display').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  }
+  updateClock(); setInterval(updateClock, 1000);
+
+  // Quotes
+  let qIdx = Math.floor(Math.random() * quotes.length);
+  function showQuote(idx) {
+    const t = document.getElementById('quote-text'), a = document.getElementById('quote-author');
+    t.classList.add('out'); a.classList.add('out');
+    setTimeout(() => {
+      t.textContent = '\u201c' + quotes[idx].text + '\u201d';
+      a.textContent = '— ' + quotes[idx].author;
+      t.classList.remove('out'); a.classList.remove('out');
+    }, 500);
+  }
+  function nextQuote() { qIdx = (qIdx + 1) % quotes.length; showQuote(qIdx); }
+  showQuote(qIdx);
+  setInterval(nextQuote, 35000);
+
+  // Affirmations
+  let aIdx = Math.floor(Math.random() * affirmations.length);
+  function showAff(idx) {
+    const el = document.getElementById('aff-text');
+    el.classList.add('out');
+    setTimeout(() => { el.textContent = affirmations[idx]; el.classList.remove('out'); }, 600);
+  }
+  showAff(aIdx);
+  setInterval(() => { aIdx = (aIdx + 1) % affirmations.length; showAff(aIdx); }, 9000);
+
+  // ── CANVAS DIVIDERS ──
+  function setupDivider(canvasId, cometDelay) {
+    const dc = document.getElementById(canvasId);
+    const dctx = dc.getContext('2d');
+    const stars = ['✦', '✦', '✦'];
+    let phase = -cometDelay * 60; // offset in frames
+
+    function resizeDivider() {
+      const wrap = dc.parentElement;
+      dc.width = wrap.clientWidth;
+      dc.height = 20;
+    }
+    resizeDivider();
+    window.addEventListener('resize', resizeDivider);
+
+    const CYCLE = 300; // frames per comet pass (~5s at 60fps)
+
+    function drawDivider(frame) {
+      const W = dc.width, H = dc.height;
+      const cy = H / 2;
+      dctx.clearRect(0, 0, W, H);
+
+      // Star positions (roughly centered, spaced evenly in middle 20%)
+      const starW = 60;
+      const starX = [W/2 - starW, W/2, W/2 + starW];
+
+      // Progress 0→1 for comet position
+      const prog = ((frame % CYCLE) + CYCLE) % CYCLE / CYCLE;
+      const cometX = -0.15 * W + prog * W * 1.3;
+      const tailLen = W * 0.22;
+
+      // Helper: brightness at position x based on comet
+      function brightness(x) {
+        const dist = cometX - x;
+        if (dist < 0 || dist > tailLen) return 0;
+        // Head is bright, tail fades out
+        const t = 1 - (dist / tailLen);
+        return Math.pow(t, 1.5);
+      }
+
+      // Draw line segments (left of first star, between stars, right of last star)
+      const segments = [
+        [0, starX[0] - 14],
+        [starX[0] + 14, starX[1] - 14],
+        [starX[1] + 14, starX[2] - 14],
+        [starX[2] + 14, W],
+      ];
+
+      segments.forEach(([x1, x2]) => {
+        if (x2 <= x1) return;
+        // Draw the base dim line
+        const baseGrad = dctx.createLinearGradient(x1, cy, x2, cy);
+        baseGrad.addColorStop(0, 'rgba(107,63,160,0.0)');
+        baseGrad.addColorStop(0.3, 'rgba(107,63,160,0.5)');
+        baseGrad.addColorStop(0.7, 'rgba(232,185,35,0.25)');
+        baseGrad.addColorStop(1, 'rgba(107,63,160,0.0)');
+        dctx.strokeStyle = baseGrad;
+        dctx.lineWidth = 1;
+        dctx.beginPath(); dctx.moveTo(x1, cy); dctx.lineTo(x2, cy); dctx.stroke();
+
+        // Draw comet glow on line — sample brightness along segment
+        const steps = Math.ceil(x2 - x1);
+        for (let i = 0; i < steps; i += 2) {
+          const x = x1 + i;
+          const b = brightness(x);
+          if (b <= 0) continue;
+          dctx.strokeStyle = `rgba(255,230,100,${b * 0.95})`;
+          dctx.lineWidth = 1 + b * 1.5;
+          dctx.shadowColor = `rgba(232,185,35,${b * 0.8})`;
+          dctx.shadowBlur = b * 8;
+          dctx.beginPath(); dctx.moveTo(x, cy); dctx.lineTo(x + 2, cy); dctx.stroke();
+          dctx.shadowBlur = 0;
+        }
+      });
+
+      // Draw stars
+      stars.forEach((s, i) => {
+        const sx = starX[i];
+        const b = brightness(sx);
+        const baseAlpha = 0.3;
+        const alpha = Math.min(1, baseAlpha + b * 0.7);
+        const size = 9 + b * 3;
+        dctx.font = `${size}px serif`;
+        dctx.textAlign = 'center';
+        dctx.textBaseline = 'middle';
+        dctx.fillStyle = `rgba(232,185,35,${alpha})`;
+        if (b > 0.1) {
+          dctx.shadowColor = `rgba(255,220,80,${b})`;
+          dctx.shadowBlur = b * 12;
+        }
+        dctx.fillText(s, sx, cy);
+        dctx.shadowBlur = 0;
+      });
+
+      phase++;
+      requestAnimationFrame(() => drawDivider(phase));
+    }
+    drawDivider(phase);
+  }
+
+  setupDivider('divider1', 0);
+  setupDivider('divider2', 2.5); // 2.5s offset — aesthetically staggered
+
+  // Particles
+  const pc = document.getElementById('particles');
+  const colors = ['rgba(107,63,160,0.7)', 'rgba(232,185,35,0.5)', 'rgba(180,100,220,0.5)'];
+  for (let i = 0; i < 22; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 3 + 1;
+    p.style.cssText = `left:${Math.random()*100}%;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${Math.random()*14+8}s;animation-delay:${Math.random()*12}s;`;
+    pc.appendChild(p);
+  }
+</script>
+</body>
+</html>
